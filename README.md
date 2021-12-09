@@ -17,3 +17,4 @@ ${LOCAL_PATH}/securedevice.aar
 
 **N.B: you must have a valid Gradle installation**
 
+**Actually all project implementing the lib must have com.squareup.moshi:moshi-kotlin dependency**
