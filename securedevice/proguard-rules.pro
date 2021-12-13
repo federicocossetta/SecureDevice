@@ -14,6 +14,7 @@
 -keep class com.securedevice.core.base.model.** { *; }
 -keep class com.securedevice.core.base.RepoUserCallback {*;}
 -keep class com.securedevice.core.base.SecureDeviceException {*;}
+-keep class com.securedevice.core.base.model.AnalysisResult {*;}
 -keep class com.securedevice.core.base.data.NetworkClient {*;}
 -keep class com.securedevice.core.base.data.MyNetworkCallback {*;}
 -keep class com.securedevice.core.base.data.MyNetworkCallback {*;}
