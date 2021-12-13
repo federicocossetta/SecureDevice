@@ -123,12 +123,11 @@ open class SecurityChecker {
                         val adapter: JsonAdapter<List<GithubUser>> =
                             moshi.adapter(newParameterizedType)
                         val usersList: List<GithubUser>? = adapter.lenient().fromJson(result)
-                        usersList?.let {
-                            callback.onUserFound(it)
-                        } ?: run {
-                            callback.onUserNotFound()
-                        }
-
+                       if(!usersList.isNullOrEmpty()){
+                           callback.onUserFound(usersList)
+                       }else{
+                           callback.onUserNotFound()
+                       }
                     }
 
                     override fun onCallError(networkError: NetworkError) {
