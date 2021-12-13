@@ -1,6 +1,5 @@
 package com.securedevice.core.base
 
-import android.Manifest
 import android.content.Context
 import android.os.Build
 import android.util.Log
@@ -25,14 +24,14 @@ open class SecurityChecker {
 
     constructor(options: SecurityProviderOption) {
         builder = options
-        isTrustedDevice(options)
+
         getDeviceInfo(options.context.get()!!)
 
     }
 
     @Throws(SecurityException::class)
     open fun getGitHubApi(): GitHubApi {
-        if (!deviceTrusted) {
+        if (!isTrustedDevice()) {
             throw  SecureDeviceException("Device not trusted")
         }
         return GitHubApi(builder.networkClient)
@@ -46,63 +45,27 @@ open class SecurityChecker {
         val deviceName = "${Build.BRAND} - ${Build.MODEL} - ${Build.MANUFACTURER}"
         analysisResult.deviceName = deviceName
         analysisResult.installedApps = ApplicationAnalyzer().getApplication(context)
+        analysisResult.isRooted = EnviromentCheck.isRooted()
+        analysisResult.isEmulated = EnviromentCheck.isInEmulator()
 
     }
 
-    private var deviceTrusted: Boolean = false
 
     @Throws(SecurityException::class)
     open fun getAnalysisResult(): AnalysisResult {
-        if (!deviceTrusted) {
+        if (!isTrustedDevice()) {
             throw  SecureDeviceException("Device not trusted")
         }
         return analysisResult
     }
 
-    @Throws(SecurityException::class)
-    open fun isSdkGreaterThen30(): Boolean {
-        if (!deviceTrusted) {
-            throw  SecureDeviceException("Device not trusted")
-        }
-        return analysisResult.sdkVersion >= 30
+
+    private fun isTrustedDevice(): Boolean {
+        return !analysisResult.isEmulated && !analysisResult.isRooted
+
     }
 
-    @Throws(SecurityException::class)
-    open fun packageStartWith(packageName: String): Boolean {
-        if (!deviceTrusted) {
-            throw  SecureDeviceException("Device not trusted")
-        }
-        analysisResult.packageName?.let { return it.startsWith(packageName) } ?: run {
-            return false
-        }
-    }
-
-
-    private fun isTrustedDevice(options: SecurityProviderOption) {
-        if (EnviromentCheck.isRooted()) {
-            analysisResult.isRooted = true
-        }
-        if (EnviromentCheck.isInEmulator()) {
-            analysisResult.isEmulated = true
-        }
-        var permissionRequestBuilder = PermissionUtil.PermissionRequestBuilder(
-            options.context
-                .get()
-        )
-        permissionRequestBuilder.addPermission(Manifest.permission.ACCESS_NETWORK_STATE)
-        if (builder.createDest) {
-            permissionRequestBuilder.addPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        }
-        val build = permissionRequestBuilder.build()
-        val checkPermission = PermissionUtil.checkPermission(build)
-        if (!checkPermission.isSuccess) {
-            throw SecureDeviceException("Missing permission")
-
-        }
-        deviceTrusted = true
-    }
-
-    inner class GitHubApi(
+    class GitHubApi internal constructor(
         private val networkClient:
         NetworkClient
     ) {
