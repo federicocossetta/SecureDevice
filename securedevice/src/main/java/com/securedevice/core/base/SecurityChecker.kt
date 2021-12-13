@@ -30,8 +30,12 @@ open class SecurityChecker {
 
     }
 
+    @Throws(SecurityException::class)
     open fun getGitHubApi(): GitHubApi {
-        return GitHubApi(deviceTrusted, builder.networkClient)
+        if (!deviceTrusted) {
+            throw  SecureDeviceException("Device not trusted")
+        }
+        return GitHubApi(builder.networkClient)
     }
 
     private fun getDeviceInfo(context: Context) {
@@ -56,7 +60,7 @@ open class SecurityChecker {
     }
 
     @Throws(SecurityException::class)
-    open fun isSdkGreatherThen30(): Boolean {
+    open fun isSdkGreaterThen30(): Boolean {
         if (!deviceTrusted) {
             throw  SecureDeviceException("Device not trusted")
         }
@@ -99,15 +103,12 @@ open class SecurityChecker {
     }
 
     inner class GitHubApi(
-        private val deviceTrusted: Boolean, private val networkClient:
+        private val networkClient:
         NetworkClient
     ) {
         private val TAG: String = "GitHubApi"
         fun getRepoFavorites(user: String, repository: String, callback: RepoUserCallback) {
-            if (!deviceTrusted) {
-                callback.onDeviceUntrusted(SecureDeviceException("Device not trusted"))
-                return
-            }
+
             try {
                 val baseUrl = "https://api.github.com/repos/%s/%s/stargazers"
                 val finalUrl = String.format(baseUrl, user, repository)
@@ -123,11 +124,11 @@ open class SecurityChecker {
                         val adapter: JsonAdapter<List<GithubUser>> =
                             moshi.adapter(newParameterizedType)
                         val usersList: List<GithubUser>? = adapter.lenient().fromJson(result)
-                       if(!usersList.isNullOrEmpty()){
-                           callback.onUserFound(usersList)
-                       }else{
-                           callback.onUserNotFound()
-                       }
+                        if (!usersList.isNullOrEmpty()) {
+                            callback.onUserFound(usersList)
+                        } else {
+                            callback.onUserNotFound()
+                        }
                     }
 
                     override fun onCallError(networkError: NetworkError) {
